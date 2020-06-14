@@ -297,6 +297,9 @@ public class AoAInfoHudRenderer {
 			}
 		}
 
+		if (ammoItem == ItemStack.EMPTY)
+			ammoItem = new ItemStack(ItemRegister.HOLLY_ARROW);
+
 		int greed = EnchantmentHelper.getEnchantmentLevel(EnchantmentsRegister.GREED, weapon);
 
 		mc.getRenderItem().renderItemIntoGUI(ammoItem, 10, yOffset + 18);
