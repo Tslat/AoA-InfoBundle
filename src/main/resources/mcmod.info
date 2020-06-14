@@ -1,0 +1,14 @@
+[
+  {
+    "modid": "aoainfo",
+    "name": "More AoA Info",
+    "description": "Adds more information to areas of Advent of Ascension",
+    "version": "1.0",
+    "mcversion": "1.12.2",
+    "url": "https://adventofascension.gamepedia.com/Advent_of_Ascension_Wiki",
+    "authorList": ["Tslat"],
+    "screenshots": [],
+    "requiredMods": ["aoa3"],
+    "dependencies": ["aoa3"]
+  }
+]

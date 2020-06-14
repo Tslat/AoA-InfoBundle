@@ -1,0 +1,3 @@
+gui.aoainfoconfig.displayAdvancedTooltips=Display Advanced Tooltips
+gui.aoainfo.tooltips.dps=(%1$s DPS)
+gui.aoainfo.tooltip.perSec=(%1$s/sec)
