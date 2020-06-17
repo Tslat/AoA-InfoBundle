@@ -1,9 +1,10 @@
 ### AoA InfoBundle ###
 This mod is an addon to Advent of Ascension.
 
-Currently, it only does three things:
-* Adds dynamic DPS values to all AoA weapon tooltips
+Currently, it does four things:
+* Adds dynamic DPS values to all AoA and some vanilla weapon tooltips
 * Adds dynamic Energy/sec values all AoA Blasters
+* Adds Armour value differences on armour pieces
 * Displays a HUD in the top left corner when using AoA weapons that shows the required ammo counts.
 
 The aim of this mod is to add additional information to AoA that may not be suitable for the base mod.
