@@ -7,9 +7,7 @@ import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
+import net.minecraft.item.*;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -22,6 +20,7 @@ import net.tslat.aoa3.item.misc.HollyArrow;
 import net.tslat.aoa3.item.misc.RuneItem;
 import net.tslat.aoa3.item.weapon.archergun.BaseArchergun;
 import net.tslat.aoa3.item.weapon.bow.BaseBow;
+import net.tslat.aoa3.item.weapon.bow.Slingshot;
 import net.tslat.aoa3.item.weapon.gun.BaseGun;
 import net.tslat.aoa3.item.weapon.staff.BaseStaff;
 import net.tslat.aoa3.library.Enums;
@@ -44,7 +43,7 @@ public class AoAInfoHudRenderer {
 
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public void onRenderTick(final TickEvent.RenderTickEvent ev) {
-		if (mc.currentScreen == null && !mc.gameSettings.hideGUI && !mc.player.isSpectator() && AoAInfoConfig.displayAmmoHud) {
+		if (mc.currentScreen == null && !mc.gameSettings.hideGUI && !mc.player.isSpectator() && AoAInfoConfig.displayAmmoHud && !mc.player.isCreative()) {
 			ItemStack mainHandStack = mc.player.getHeldItemMainhand();
 			ItemStack offHandStack = mc.player.getHeldItemOffhand();
 			Item mainHandItem = mainHandStack.getItem();
@@ -52,10 +51,10 @@ public class AoAInfoHudRenderer {
 			boolean doMainHand = false;
 			boolean doOffHand = false;
 
-			if (mainHandStack != ItemStack.EMPTY && (mainHandItem instanceof BaseGun || mainHandItem instanceof BaseStaff || mainHandItem instanceof BaseBow))
+			if (mainHandStack != ItemStack.EMPTY && (mainHandItem instanceof BaseGun || mainHandItem instanceof BaseStaff || mainHandItem instanceof ItemBow) && (!EnchantmentsRegister.BRACE.canApply(mainHandStack) || EnchantmentHelper.getEnchantmentLevel(EnchantmentsRegister.BRACE, mainHandStack) == 0))
 				doMainHand = true;
 
-			if (offHandStack != ItemStack.EMPTY && (offHandItem instanceof BaseGun || offHandItem instanceof BaseStaff || offHandItem instanceof BaseBow))
+			if (offHandStack != ItemStack.EMPTY && (offHandItem instanceof BaseGun || offHandItem instanceof BaseStaff || offHandItem instanceof ItemBow) && (!EnchantmentsRegister.BRACE.canApply(offHandStack) || EnchantmentHelper.getEnchantmentLevel(EnchantmentsRegister.BRACE, offHandStack) > 0))
 				doOffHand = true;
 
 			if (!doMainHand && !doOffHand)
@@ -98,8 +97,14 @@ public class AoAInfoHudRenderer {
 				if (mainHandItem instanceof BaseStaff) {
 					yOffset += renderRunesGroup("Main Hand", mainHandStack, ((BaseStaff)mainHandItem).getRunes(), yOffset);
 				}
+				else if (mainHandItem instanceof Slingshot) {
+					yOffset += renderSlingshotGroup("Main Hand", mainHandStack, yOffset);
+				}
 				else if (mainHandItem instanceof BaseBow || mainHandItem instanceof BaseArchergun) {
-					yOffset += renderArrowGroup("Main Hand", mainHandStack, yOffset);
+					yOffset += renderArrowGroup("Main Hand", mainHandStack, yOffset, false);
+				}
+				else if (mainHandItem instanceof ItemBow) {
+					yOffset += renderArrowGroup("Main Hand", mainHandStack, yOffset, true);
 				}
 				else {
 					yOffset += renderGunGroup("Main Hand", mainHandStack, yOffset);
@@ -110,8 +115,14 @@ public class AoAInfoHudRenderer {
 				if (offHandItem instanceof BaseStaff) {
 					renderRunesGroup("Offhand", offHandStack, ((BaseStaff)offHandItem).getRunes(), yOffset);
 				}
+				else if (offHandItem instanceof Slingshot) {
+					renderSlingshotGroup("Offhand", offHandStack, yOffset);
+				}
 				else if (offHandItem instanceof BaseBow || offHandItem instanceof BaseArchergun) {
-					renderArrowGroup("Offhand", offHandStack, yOffset);
+					renderArrowGroup("Offhand", offHandStack, yOffset, false);
+				}
+				else if (mainHandItem instanceof ItemBow) {
+					renderArrowGroup("Offhand", offHandStack, yOffset, true);
 				}
 				else {
 					renderGunGroup("Offhand", offHandStack, yOffset);
@@ -209,6 +220,9 @@ public class AoAInfoHudRenderer {
 					case "Seeds":
 						ammoItem = Items.WHEAT_SEEDS;
 						break;
+					case "Spreadshot":
+						ammoItem = ItemRegister.SPREADSHOT;
+						break;
 					case "Cannonballs":
 						ammoItem = ItemRegister.CANNONBALL;
 						break;
@@ -265,19 +279,20 @@ public class AoAInfoHudRenderer {
 		return 32;
 	}
 
-	public int renderArrowGroup(String title, ItemStack weapon, int yOffset) {
+	public int renderArrowGroup(String title, ItemStack weapon, int yOffset, boolean isVanillaBow) {
 		RenderUtil.drawCenteredScaledString(mc.fontRenderer, title, 80, yOffset + 8, 1.0f, Enums.RGBIntegers.WHITE, RenderUtil.StringRenderType.OUTLINED);
 
 		ItemStack ammoItem = ItemStack.EMPTY;
 		int ammoCount = 0;
 		ItemStack checkStack;
+		Class<? extends ItemArrow> ammoClass = isVanillaBow ? ItemArrow.class : HollyArrow.class;
 
-		if ((checkStack = mc.player.getHeldItemMainhand()).getItem() instanceof HollyArrow) {
+		if (ammoClass.isInstance((checkStack = mc.player.getHeldItemMainhand()).getItem())) {
 			ammoItem = checkStack;
 			ammoCount = checkStack.getCount();
 		}
 
-		if ((checkStack = mc.player.getHeldItemOffhand()).getItem() instanceof HollyArrow) {
+		if (ammoClass.isInstance((checkStack = mc.player.getHeldItemOffhand()).getItem())) {
 			if (ammoItem == ItemStack.EMPTY)
 				ammoItem = checkStack;
 
@@ -288,7 +303,7 @@ public class AoAInfoHudRenderer {
 		for (int i = 0; i < mc.player.inventory.getSizeInventory(); ++i) {
 			ItemStack stack = mc.player.inventory.getStackInSlot(i);
 
-			if (stack != ItemStack.EMPTY && stack.getItem() instanceof HollyArrow) {
+			if (stack != ItemStack.EMPTY && ammoClass.isInstance(stack.getItem())) {
 				if (ammoItem == ItemStack.EMPTY)
 					ammoItem = stack;
 
@@ -298,7 +313,50 @@ public class AoAInfoHudRenderer {
 		}
 
 		if (ammoItem == ItemStack.EMPTY)
-			ammoItem = new ItemStack(ItemRegister.HOLLY_ARROW);
+			ammoItem = new ItemStack((isVanillaBow ? Items.ARROW : ItemRegister.HOLLY_ARROW));
+
+		int greed = EnchantmentHelper.getEnchantmentLevel(EnchantmentsRegister.GREED, weapon);
+
+		mc.getRenderItem().renderItemIntoGUI(ammoItem, 10, yOffset + 18);
+		RenderUtil.drawOutlinedText(mc.fontRenderer, StringUtil.getLocaleStringWithArguments("gui.aoainfo.ammoHud.amount", String.valueOf(1 + greed)) + "      " + StringUtil.getLocaleStringWithArguments("gui.aoainfo.ammoHud.available", String.valueOf(ammoCount)), 26, yOffset + 22, ammoCount > 0 ? Enums.RGBIntegers.WHITE : Enums.RGBIntegers.RED, 1.0f);
+
+		return 32;
+	}
+
+	public int renderSlingshotGroup(String title, ItemStack weapon, int yOffset) {
+		RenderUtil.drawCenteredScaledString(mc.fontRenderer, title, 80, yOffset + 8, 1.0f, Enums.RGBIntegers.WHITE, RenderUtil.StringRenderType.OUTLINED);
+
+		ItemStack ammoItem = ItemStack.EMPTY;
+		int ammoCount = 0;
+		ItemStack checkStack;
+
+		if ((checkStack = mc.player.getHeldItemMainhand()).getItem() == ItemRegister.POP_SHOT || checkStack.getItem() == Items.FLINT) {
+			ammoItem = checkStack;
+			ammoCount = checkStack.getCount();
+		}
+
+		if ((checkStack = mc.player.getHeldItemOffhand()).getItem() == ItemRegister.POP_SHOT || checkStack.getItem() == Items.FLINT) {
+			if (ammoItem == ItemStack.EMPTY)
+				ammoItem = checkStack;
+
+			if (checkStack.getItem() == ammoItem.getItem())
+				ammoCount += checkStack.getCount();
+		}
+
+		for (int i = 0; i < mc.player.inventory.getSizeInventory(); ++i) {
+			ItemStack stack = mc.player.inventory.getStackInSlot(i);
+
+			if (stack != ItemStack.EMPTY && (stack.getItem() == ItemRegister.POP_SHOT || stack.getItem() == Items.FLINT)) {
+				if (ammoItem == ItemStack.EMPTY)
+					ammoItem = stack;
+
+				if (stack.getItem() == ammoItem.getItem())
+					ammoCount += stack.getCount();
+			}
+		}
+
+		if (ammoItem == ItemStack.EMPTY)
+			ammoItem = new ItemStack(ItemRegister.POP_SHOT);
 
 		int greed = EnchantmentHelper.getEnchantmentLevel(EnchantmentsRegister.GREED, weapon);
 
