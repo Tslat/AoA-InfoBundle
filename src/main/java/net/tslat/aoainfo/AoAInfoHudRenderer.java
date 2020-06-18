@@ -23,6 +23,7 @@ import net.tslat.aoa3.item.weapon.bow.BaseBow;
 import net.tslat.aoa3.item.weapon.bow.Slingshot;
 import net.tslat.aoa3.item.weapon.gun.BaseGun;
 import net.tslat.aoa3.item.weapon.staff.BaseStaff;
+import net.tslat.aoa3.item.weapon.thrown.BaseThrownWeapon;
 import net.tslat.aoa3.library.Enums;
 import net.tslat.aoa3.utils.RenderUtil;
 import net.tslat.aoa3.utils.StringUtil;
@@ -51,10 +52,10 @@ public class AoAInfoHudRenderer {
 			boolean doMainHand = false;
 			boolean doOffHand = false;
 
-			if (mainHandStack != ItemStack.EMPTY && (mainHandItem instanceof BaseGun || mainHandItem instanceof BaseStaff || mainHandItem instanceof ItemBow) && (!EnchantmentsRegister.BRACE.canApply(mainHandStack) || EnchantmentHelper.getEnchantmentLevel(EnchantmentsRegister.BRACE, mainHandStack) == 0))
+			if (mainHandStack != ItemStack.EMPTY && ((mainHandItem instanceof BaseGun && !(mainHandItem instanceof BaseThrownWeapon) && mainHandItem != WeaponRegister.SPECTRAL_ARCHERGUN) || mainHandItem instanceof BaseStaff || (mainHandItem instanceof ItemBow && mainHandItem != WeaponRegister.SPECTRAL_BOW)) && (!EnchantmentsRegister.BRACE.canApply(mainHandStack) || EnchantmentHelper.getEnchantmentLevel(EnchantmentsRegister.BRACE, mainHandStack) == 0))
 				doMainHand = true;
 
-			if (offHandStack != ItemStack.EMPTY && (offHandItem instanceof BaseGun || offHandItem instanceof BaseStaff || offHandItem instanceof ItemBow) && (!EnchantmentsRegister.BRACE.canApply(offHandStack) || EnchantmentHelper.getEnchantmentLevel(EnchantmentsRegister.BRACE, offHandStack) > 0))
+			if (offHandStack != ItemStack.EMPTY && ((offHandItem instanceof BaseGun && !(offHandItem instanceof BaseThrownWeapon) && offHandItem != WeaponRegister.SPECTRAL_ARCHERGUN) || offHandItem instanceof BaseStaff || (offHandItem instanceof ItemBow && offHandItem != WeaponRegister.SPECTRAL_BOW)) && (!EnchantmentsRegister.BRACE.canApply(offHandStack) || EnchantmentHelper.getEnchantmentLevel(EnchantmentsRegister.BRACE, offHandStack) > 0))
 				doOffHand = true;
 
 			if (!doMainHand && !doOffHand)
@@ -187,7 +188,7 @@ public class AoAInfoHudRenderer {
 			int available = availableRuneMap.getOrDefault(entry.getKey(), 0);
 
 			mc.getRenderItem().renderItemIntoGUI(new ItemStack(entry.getKey()), 10, yOffset + 18 + runeNum * 20);
-			RenderUtil.drawOutlinedText(mc.fontRenderer, StringUtil.getLocaleStringWithArguments("gui.aoainfo.ammoHud.amount", String.valueOf(amount)) + "      " + StringUtil.getLocaleStringWithArguments("gui.aoainfo.ammoHud.available", String.valueOf(available)), 26, yOffset + 22 + runeNum * 20, available > amount ? Enums.RGBIntegers.WHITE : Enums.RGBIntegers.RED, 1.0f);
+			RenderUtil.drawOutlinedText(mc.fontRenderer, StringUtil.getLocaleStringWithArguments("gui.aoainfo.ammoHud.amount", String.valueOf(amount)) + "      " + StringUtil.getLocaleStringWithArguments("gui.aoainfo.ammoHud.available", String.valueOf(available)), 26, yOffset + 22 + runeNum * 20, available >= amount ? Enums.RGBIntegers.WHITE : Enums.RGBIntegers.RED, 1.0f);
 			runeNum++;
 		}
 
@@ -264,9 +265,7 @@ public class AoAInfoHudRenderer {
 		if ((checkStack = mc.player.getHeldItemOffhand()).getItem() == ammoItem)
 			ammoCount += checkStack.getCount();
 
-		for (int i = 0; i < mc.player.inventory.getSizeInventory(); ++i) {
-			ItemStack stack = mc.player.inventory.getStackInSlot(i);
-
+		for (ItemStack stack : mc.player.inventory.mainInventory) {
 			if (stack.getItem() == ammoItem)
 				ammoCount += stack.getCount();
 		}
@@ -300,9 +299,7 @@ public class AoAInfoHudRenderer {
 				ammoCount += checkStack.getCount();
 		}
 
-		for (int i = 0; i < mc.player.inventory.getSizeInventory(); ++i) {
-			ItemStack stack = mc.player.inventory.getStackInSlot(i);
-
+		for (ItemStack stack : mc.player.inventory.mainInventory) {
 			if (stack != ItemStack.EMPTY && ammoClass.isInstance(stack.getItem())) {
 				if (ammoItem == ItemStack.EMPTY)
 					ammoItem = stack;
@@ -343,9 +340,7 @@ public class AoAInfoHudRenderer {
 				ammoCount += checkStack.getCount();
 		}
 
-		for (int i = 0; i < mc.player.inventory.getSizeInventory(); ++i) {
-			ItemStack stack = mc.player.inventory.getStackInSlot(i);
-
+		for (ItemStack stack : mc.player.inventory.mainInventory) {
 			if (stack != ItemStack.EMPTY && (stack.getItem() == ItemRegister.POP_SHOT || stack.getItem() == Items.FLINT)) {
 				if (ammoItem == ItemStack.EMPTY)
 					ammoItem = stack;
